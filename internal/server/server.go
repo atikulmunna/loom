@@ -28,6 +28,10 @@ func New(h *hub.Hub, agg *aggregator.Aggregator, port string) *Server {
 	engine := gin.New()
 	engine.Use(gin.Recovery())
 
+	// Disable automatic redirects that cause 301 issues.
+	engine.RedirectTrailingSlash = false
+	engine.RedirectFixedPath = false
+
 	s := &Server{
 		engine:     engine,
 		hub:        h,
@@ -39,15 +43,27 @@ func New(h *hub.Hub, agg *aggregator.Aggregator, port string) *Server {
 	return s
 }
 
-func (s *Server) setupRoutes() {
-	// Serve embedded static files.
-	webContent, _ := fs.Sub(webFS, "web")
-	s.engine.StaticFS("/static", http.FS(webContent))
+// serveEmbedded reads a file from the embedded FS and writes it with the given content type.
+func serveEmbedded(webContent fs.FS, name string, contentType string) gin.HandlerFunc {
+	// Pre-read the file at startup so we don't read on every request.
+	data, err := fs.ReadFile(webContent, name)
+	return func(c *gin.Context) {
+		if err != nil {
+			c.String(http.StatusNotFound, "file not found: %s", name)
+			return
+		}
+		c.Data(http.StatusOK, contentType, data)
+	}
+}
 
-	// Dashboard.
-	s.engine.GET("/", func(c *gin.Context) {
-		c.FileFromFS("index.html", http.FS(webContent))
-	})
+func (s *Server) setupRoutes() {
+	// Extract the embedded web/ content.
+	webContent, _ := fs.Sub(webFS, "web")
+
+	// Dashboard — serve embedded files directly with correct content types.
+	s.engine.GET("/", serveEmbedded(webContent, "index.html", "text/html; charset=utf-8"))
+	s.engine.GET("/style.css", serveEmbedded(webContent, "style.css", "text/css; charset=utf-8"))
+	s.engine.GET("/app.js", serveEmbedded(webContent, "app.js", "application/javascript; charset=utf-8"))
 
 	// Health check.
 	s.engine.GET("/healthz", func(c *gin.Context) {
@@ -70,17 +86,14 @@ func (s *Server) setupRoutes() {
 	s.engine.GET("/ws", s.handleWebSocket)
 
 	// pprof profiling endpoints.
-	pprofGroup := s.engine.Group("/debug/pprof")
-	{
-		pprofGroup.GET("/", gin.WrapF(pprof.Index))
-		pprofGroup.GET("/cmdline", gin.WrapF(pprof.Cmdline))
-		pprofGroup.GET("/profile", gin.WrapF(pprof.Profile))
-		pprofGroup.GET("/symbol", gin.WrapF(pprof.Symbol))
-		pprofGroup.GET("/trace", gin.WrapF(pprof.Trace))
-		pprofGroup.GET("/allocs", gin.WrapH(pprof.Handler("allocs")))
-		pprofGroup.GET("/heap", gin.WrapH(pprof.Handler("heap")))
-		pprofGroup.GET("/goroutine", gin.WrapH(pprof.Handler("goroutine")))
-	}
+	s.engine.GET("/debug/pprof/", gin.WrapF(pprof.Index))
+	s.engine.GET("/debug/pprof/cmdline", gin.WrapF(pprof.Cmdline))
+	s.engine.GET("/debug/pprof/profile", gin.WrapF(pprof.Profile))
+	s.engine.GET("/debug/pprof/symbol", gin.WrapF(pprof.Symbol))
+	s.engine.GET("/debug/pprof/trace", gin.WrapF(pprof.Trace))
+	s.engine.GET("/debug/pprof/allocs", gin.WrapH(pprof.Handler("allocs")))
+	s.engine.GET("/debug/pprof/heap", gin.WrapH(pprof.Handler("heap")))
+	s.engine.GET("/debug/pprof/goroutine", gin.WrapH(pprof.Handler("goroutine")))
 }
 
 // Start runs the server. Blocks until the server is stopped.

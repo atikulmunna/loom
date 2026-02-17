@@ -1,14 +1,18 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Loom — Log Dashboard</title>
     <meta name="description" content="Real-time log monitoring dashboard powered by Loom">
-    <link rel="stylesheet" href="/static/style.css">
+    <link rel="stylesheet" href="/style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+        rel="stylesheet">
 </head>
+
 <body>
     <!-- Header -->
     <header class="header">
@@ -54,11 +58,16 @@
     <!-- Filters -->
     <section class="filters">
         <button class="filter-btn filter-btn--active" data-level="all" onclick="toggleFilter('all')">All</button>
-        <button class="filter-btn filter-btn--info filter-btn--active" data-level="INFO" onclick="toggleFilter('INFO')">INFO</button>
-        <button class="filter-btn filter-btn--warn filter-btn--active" data-level="WARN" onclick="toggleFilter('WARN')">WARN</button>
-        <button class="filter-btn filter-btn--error filter-btn--active" data-level="ERROR" onclick="toggleFilter('ERROR')">ERROR</button>
-        <button class="filter-btn filter-btn--fatal filter-btn--active" data-level="FATAL" onclick="toggleFilter('FATAL')">FATAL</button>
-        <button class="filter-btn filter-btn--debug filter-btn--active" data-level="DEBUG" onclick="toggleFilter('DEBUG')">DEBUG</button>
+        <button class="filter-btn filter-btn--info filter-btn--active" data-level="INFO"
+            onclick="toggleFilter('INFO')">INFO</button>
+        <button class="filter-btn filter-btn--warn filter-btn--active" data-level="WARN"
+            onclick="toggleFilter('WARN')">WARN</button>
+        <button class="filter-btn filter-btn--error filter-btn--active" data-level="ERROR"
+            onclick="toggleFilter('ERROR')">ERROR</button>
+        <button class="filter-btn filter-btn--fatal filter-btn--active" data-level="FATAL"
+            onclick="toggleFilter('FATAL')">FATAL</button>
+        <button class="filter-btn filter-btn--debug filter-btn--active" data-level="DEBUG"
+            onclick="toggleFilter('DEBUG')">DEBUG</button>
         <div class="filters__spacer"></div>
         <button class="filter-btn filter-btn--clear" onclick="clearLogs()">Clear</button>
         <label class="autoscroll-toggle">
@@ -76,6 +85,7 @@
         </div>
     </main>
 
-    <script src="/static/app.js"></script>
+    <script src="/app.js"></script>
 </body>
+
 </html>
