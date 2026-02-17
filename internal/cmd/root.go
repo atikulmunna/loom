@@ -14,6 +14,8 @@ var (
 	levelFilter string
 	format      string
 	pattern     string
+	serve       bool
+	port        string
 )
 
 // rootCmd is the base command when called without subcommands.
@@ -41,6 +43,8 @@ func init() {
 	rootCmd.PersistentFlags().StringVarP(&levelFilter, "level", "l", "", "filter by severity (comma-separated: info,warn,error)")
 	rootCmd.PersistentFlags().StringVarP(&format, "format", "f", "auto", "log format: auto, json, clf, regex")
 	rootCmd.PersistentFlags().StringVarP(&pattern, "pattern", "p", "", "custom regex pattern (used with --format regex)")
+	rootCmd.PersistentFlags().BoolVarP(&serve, "serve", "s", false, "start the web dashboard")
+	rootCmd.PersistentFlags().StringVar(&port, "port", "8080", "web dashboard port")
 }
 
 func initConfig() {

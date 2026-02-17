@@ -10,10 +10,12 @@ import (
 	"strings"
 	"syscall"
 
+	"github.com/atikulmunna/loom/internal/aggregator"
 	"github.com/atikulmunna/loom/internal/hub"
 	"github.com/atikulmunna/loom/internal/model"
 	"github.com/atikulmunna/loom/internal/output"
 	"github.com/atikulmunna/loom/internal/parser"
+	"github.com/atikulmunna/loom/internal/server"
 	"github.com/atikulmunna/loom/internal/tailer"
 	"github.com/atikulmunna/loom/internal/watcher"
 	"github.com/spf13/cobra"
@@ -30,7 +32,7 @@ Examples:
   loom watch "/var/log/**/*.log"
   loom watch app.log server.log --output json
   loom watch app.log --format clf
-  loom watch app.log --format regex --pattern "^(?P<timestamp>\S+) (?P<level>\w+) (?P<message>.+)$"`,
+  loom watch app.log --serve --port 8080`,
 	Args: cobra.MinimumNArgs(1),
 	RunE: runWatch,
 }
@@ -105,16 +107,33 @@ func runWatch(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	// --- Subscribe to hub ---
-	entries := h.Subscribe()
+	// --- Subscribe CLI to hub ---
+	cliEntries := h.Subscribe()
 
-	// --- Start pipeline: Watcher → Tailer → Hub → Renderer ---
+	// --- Start web server if --serve is set ---
+	if serve {
+		// Aggregator subscribes to hub.
+		aggEntries := h.Subscribe()
+		agg := aggregator.New(aggEntries, h.Dropped, func() int { return len(watchedPaths) })
+		go agg.Start(ctx)
+
+		// Start web server.
+		srv := server.New(h, agg, port)
+		go func() {
+			fmt.Fprintf(os.Stderr, "🌐 Dashboard running at http://localhost:%s\n\n", port)
+			if err := srv.Start(); err != nil {
+				log.Printf("server error: %v", err)
+			}
+		}()
+	}
+
+	// --- Start pipeline: Watcher → Tailer → Hub ---
 	go w.Start(ctx)
 	go t.Start(ctx)
 	go h.Start(ctx)
 
-	// --- Render output ---
-	for entry := range entries {
+	// --- Render CLI output ---
+	for entry := range cliEntries {
 		if shouldShow(entry, levelSet) {
 			if err := renderer.Render(entry); err != nil {
 				log.Printf("render error: %v", err)

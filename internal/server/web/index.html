@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Loom — Log Dashboard</title>
+    <meta name="description" content="Real-time log monitoring dashboard powered by Loom">
+    <link rel="stylesheet" href="/static/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header__brand">
+            <span class="header__icon">🧵</span>
+            <h1 class="header__title">Loom</h1>
+            <span class="header__badge">LIVE</span>
+        </div>
+        <div class="header__status" id="connection-status">
+            <span class="status-dot status-dot--connecting"></span>
+            <span id="status-text">Connecting...</span>
+        </div>
+    </header>
+
+    <!-- Stats Bar -->
+    <section class="stats-bar" id="stats-bar">
+        <div class="stat-card">
+            <div class="stat-card__label">Events / sec</div>
+            <div class="stat-card__value" id="stat-eps">—</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-card__label">Total Events</div>
+            <div class="stat-card__value" id="stat-total">—</div>
+        </div>
+        <div class="stat-card stat-card--error">
+            <div class="stat-card__label">Errors</div>
+            <div class="stat-card__value" id="stat-errors">0</div>
+        </div>
+        <div class="stat-card stat-card--warn">
+            <div class="stat-card__label">Warnings</div>
+            <div class="stat-card__value" id="stat-warnings">0</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-card__label">Files Watched</div>
+            <div class="stat-card__value" id="stat-files">—</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-card__label">Uptime</div>
+            <div class="stat-card__value" id="stat-uptime">—</div>
+        </div>
+    </section>
+
+    <!-- Filters -->
+    <section class="filters">
+        <button class="filter-btn filter-btn--active" data-level="all" onclick="toggleFilter('all')">All</button>
+        <button class="filter-btn filter-btn--info filter-btn--active" data-level="INFO" onclick="toggleFilter('INFO')">INFO</button>
+        <button class="filter-btn filter-btn--warn filter-btn--active" data-level="WARN" onclick="toggleFilter('WARN')">WARN</button>
+        <button class="filter-btn filter-btn--error filter-btn--active" data-level="ERROR" onclick="toggleFilter('ERROR')">ERROR</button>
+        <button class="filter-btn filter-btn--fatal filter-btn--active" data-level="FATAL" onclick="toggleFilter('FATAL')">FATAL</button>
+        <button class="filter-btn filter-btn--debug filter-btn--active" data-level="DEBUG" onclick="toggleFilter('DEBUG')">DEBUG</button>
+        <div class="filters__spacer"></div>
+        <button class="filter-btn filter-btn--clear" onclick="clearLogs()">Clear</button>
+        <label class="autoscroll-toggle">
+            <input type="checkbox" id="autoscroll" checked>
+            <span>Auto-scroll</span>
+        </label>
+    </section>
+
+    <!-- Log Stream -->
+    <main class="log-container" id="log-container">
+        <div class="log-empty" id="log-empty">
+            <div class="log-empty__icon">🧵</div>
+            <div class="log-empty__text">Waiting for log entries...</div>
+            <div class="log-empty__hint">Append lines to your watched files to see them here</div>
+        </div>
+    </main>
+
+    <script src="/static/app.js"></script>
+</body>
+</html>
