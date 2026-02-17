@@ -6,7 +6,6 @@ import (
 	"io"
 	"log"
 	"os"
-	"strings"
 	"sync"
 	"time"
 
@@ -15,11 +14,11 @@ import (
 	"github.com/atikulmunna/loom/internal/watcher"
 )
 
-// Tailer reads newly appended lines from watched files and emits LogEntry values.
+// Tailer reads newly appended lines from watched files and emits RawLine values.
 type Tailer struct {
 	mu     sync.Mutex
 	files  map[string]*trackedFile
-	out    chan model.LogEntry
+	out    chan model.RawLine
 	ckpt   *Checkpoint
 	events <-chan watcher.Event
 	watch  *watcher.Watcher
@@ -36,15 +35,15 @@ type trackedFile struct {
 func New(w *watcher.Watcher, ckpt *Checkpoint) *Tailer {
 	return &Tailer{
 		files:  make(map[string]*trackedFile),
-		out:    make(chan model.LogEntry, 512),
+		out:    make(chan model.RawLine, 512),
 		ckpt:   ckpt,
 		events: w.Events,
 		watch:  w,
 	}
 }
 
-// Lines returns the channel where parsed log entries are sent.
-func (t *Tailer) Lines() <-chan model.LogEntry {
+// Lines returns the channel where raw log lines are sent.
+func (t *Tailer) Lines() <-chan model.RawLine {
 	return t.out
 }
 
@@ -144,8 +143,7 @@ func (t *Tailer) readNewLines(path string) {
 		line := tf.buf + scanner.Text()
 		tf.buf = ""
 
-		entry := parseLine(line, path)
-		t.out <- entry
+		t.out <- model.RawLine{Text: line, Source: path}
 	}
 
 	// If the last chunk didn't end with a newline, buffer it.
@@ -199,29 +197,4 @@ func (t *Tailer) closeAll() {
 		tf.file.Close()
 		delete(t.files, path)
 	}
-}
-
-// parseLine does a basic parse of a log line, extracting severity if present.
-func parseLine(line, source string) model.LogEntry {
-	entry := model.LogEntry{
-		Timestamp: time.Now(),
-		Source:    source,
-		Raw:       line,
-		Level:    "INFO",
-		Message:  line,
-	}
-
-	upper := strings.ToUpper(line)
-	switch {
-	case strings.Contains(upper, "FATAL"):
-		entry.Level = "FATAL"
-	case strings.Contains(upper, "ERROR"):
-		entry.Level = "ERROR"
-	case strings.Contains(upper, "WARN"):
-		entry.Level = "WARN"
-	case strings.Contains(upper, "DEBUG"):
-		entry.Level = "DEBUG"
-	}
-
-	return entry
 }

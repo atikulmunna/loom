@@ -50,9 +50,12 @@ func TestTailNewLines(t *testing.T) {
 
 	// Wait for the entry.
 	select {
-	case entry := <-tail.Lines():
-		if entry.Message != "hello from test" {
-			t.Errorf("expected 'hello from test', got %q", entry.Message)
+	case raw := <-tail.Lines():
+		if raw.Text != "hello from test" {
+			t.Errorf("expected 'hello from test', got %q", raw.Text)
+		}
+		if raw.Source != logPath {
+			t.Errorf("expected source %q, got %q", logPath, raw.Source)
 		}
 	case <-time.After(3 * time.Second):
 		t.Fatal("timed out waiting for log entry")

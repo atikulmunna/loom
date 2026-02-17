@@ -10,8 +10,10 @@ import (
 	"strings"
 	"syscall"
 
+	"github.com/atikulmunna/loom/internal/hub"
 	"github.com/atikulmunna/loom/internal/model"
 	"github.com/atikulmunna/loom/internal/output"
+	"github.com/atikulmunna/loom/internal/parser"
 	"github.com/atikulmunna/loom/internal/tailer"
 	"github.com/atikulmunna/loom/internal/watcher"
 	"github.com/spf13/cobra"
@@ -26,7 +28,9 @@ to the terminal in real time. Supports colorized output and JSON mode.
 Examples:
   loom watch /var/log/app.log
   loom watch "/var/log/**/*.log"
-  loom watch app.log server.log --output json`,
+  loom watch app.log server.log --output json
+  loom watch app.log --format clf
+  loom watch app.log --format regex --pattern "^(?P<timestamp>\S+) (?P<level>\w+) (?P<message>.+)$"`,
 	Args: cobra.MinimumNArgs(1),
 	RunE: runWatch,
 }
@@ -75,6 +79,15 @@ func runWatch(cmd *cobra.Command, args []string) error {
 	// --- Initialize tailer ---
 	t := tailer.New(w, ckpt)
 
+	// --- Select parser ---
+	p, err := selectParser(format, pattern)
+	if err != nil {
+		return err
+	}
+
+	// --- Initialize hub ---
+	h := hub.New(t.Lines(), p)
+
 	// --- Choose renderer ---
 	var renderer output.Renderer
 	switch strings.ToLower(outputFmt) {
@@ -92,12 +105,16 @@ func runWatch(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	// --- Start pipeline ---
+	// --- Subscribe to hub ---
+	entries := h.Subscribe()
+
+	// --- Start pipeline: Watcher → Tailer → Hub → Renderer ---
 	go w.Start(ctx)
 	go t.Start(ctx)
+	go h.Start(ctx)
 
 	// --- Render output ---
-	for entry := range t.Lines() {
+	for entry := range entries {
 		if shouldShow(entry, levelSet) {
 			if err := renderer.Render(entry); err != nil {
 				log.Printf("render error: %v", err)
@@ -106,6 +123,23 @@ func runWatch(cmd *cobra.Command, args []string) error {
 	}
 
 	return nil
+}
+
+// selectParser creates the appropriate parser based on CLI flags.
+func selectParser(format, pattern string) (parser.Parser, error) {
+	switch strings.ToLower(format) {
+	case "json":
+		return parser.NewJSONParser(), nil
+	case "clf":
+		return parser.NewCLFParser(), nil
+	case "regex":
+		if pattern == "" {
+			return nil, fmt.Errorf("--pattern is required when using --format regex")
+		}
+		return parser.NewRegexParser(pattern)
+	default:
+		return parser.NewAutoParser(), nil
+	}
 }
 
 // shouldShow returns true if the entry passes the level filter.

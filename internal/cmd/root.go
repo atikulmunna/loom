@@ -9,9 +9,11 @@ import (
 )
 
 var (
-	cfgFile    string
-	outputFmt  string
+	cfgFile     string
+	outputFmt   string
 	levelFilter string
+	format      string
+	pattern     string
 )
 
 // rootCmd is the base command when called without subcommands.
@@ -37,6 +39,8 @@ func init() {
 	rootCmd.PersistentFlags().StringVarP(&cfgFile, "config", "c", "", "config file (default: $HOME/.loom.yaml)")
 	rootCmd.PersistentFlags().StringVarP(&outputFmt, "output", "o", "text", "output format: text, json")
 	rootCmd.PersistentFlags().StringVarP(&levelFilter, "level", "l", "", "filter by severity (comma-separated: info,warn,error)")
+	rootCmd.PersistentFlags().StringVarP(&format, "format", "f", "auto", "log format: auto, json, clf, regex")
+	rootCmd.PersistentFlags().StringVarP(&pattern, "pattern", "p", "", "custom regex pattern (used with --format regex)")
 }
 
 func initConfig() {
