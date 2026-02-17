@@ -4,6 +4,7 @@ import (
 	"embed"
 	"io/fs"
 	"net/http"
+	"net/http/pprof"
 
 	"github.com/atikulmunna/loom/internal/aggregator"
 	"github.com/atikulmunna/loom/internal/hub"
@@ -67,6 +68,19 @@ func (s *Server) setupRoutes() {
 
 	// WebSocket.
 	s.engine.GET("/ws", s.handleWebSocket)
+
+	// pprof profiling endpoints.
+	pprofGroup := s.engine.Group("/debug/pprof")
+	{
+		pprofGroup.GET("/", gin.WrapF(pprof.Index))
+		pprofGroup.GET("/cmdline", gin.WrapF(pprof.Cmdline))
+		pprofGroup.GET("/profile", gin.WrapF(pprof.Profile))
+		pprofGroup.GET("/symbol", gin.WrapF(pprof.Symbol))
+		pprofGroup.GET("/trace", gin.WrapF(pprof.Trace))
+		pprofGroup.GET("/allocs", gin.WrapH(pprof.Handler("allocs")))
+		pprofGroup.GET("/heap", gin.WrapH(pprof.Handler("heap")))
+		pprofGroup.GET("/goroutine", gin.WrapH(pprof.Handler("goroutine")))
+	}
 }
 
 // Start runs the server. Blocks until the server is stopped.
