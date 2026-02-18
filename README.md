@@ -96,6 +96,8 @@ Then open [http://localhost:8080](http://localhost:8080) in your browser.
 
 Loom ships with a built-in real-time dashboard — no separate install needed.
 
+![Loom Dashboard](assets/loom_dashboard.png)
+
 | Metric | Description |
 |:-------|:------------|
 | **Events/sec** | Live throughput gauge |
