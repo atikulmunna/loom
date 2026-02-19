@@ -1,6 +1,0 @@
-
-2026-02-18T14:48:00Z INFO  Server started on port 3000
-2026-02-18T14:48:01Z INFO  Connected to database
-2026-02-18T14:48:02Z WARN  Memory usage at 85%
-2026-02-18T14:48:03Z ERROR Connection timeout after 30s
-2026-02-18T14:48:04Z FATAL Service crash detected
